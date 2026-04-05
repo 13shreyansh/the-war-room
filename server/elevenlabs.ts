@@ -3,57 +3,97 @@
  *
  * Generates high-quality speech audio from text using ElevenLabs API.
  * Each War Room persona gets a distinct voice for the boardroom debate.
+ * Voice assignment uses exact name match → role hint → round-robin pool.
  */
 
 const ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1";
 
-/** Voice assignments for War Room personas */
-export const PERSONA_VOICES: Record<string, { voiceId: string; description: string }> = {
-  // CFO — composed, authoritative, professional
-  "Eleanor Vance": {
-    voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah - Mature, Reassuring, Confident
-    description: "Professional female, American accent",
-  },
-  // Board Member — skeptical, measured gravitas
-  "David Chen": {
-    voiceId: "JBFqnCBsd6RMkjVDRZzb", // George - Warm, Captivating Storyteller
-    description: "Mature male, British accent",
-  },
-  // Operations Head — sharp, confident, direct
-  "Aisha Rahman": {
-    voiceId: "pFZP5JQG7iQjIQuC4Bku", // Lily - Velvety Actress
-    description: "Confident female, British accent",
-  },
+// ===== VOICE CATALOG =====
+const VOICES = {
+  sarah: "EXAVITQu4vr4xnSDxMaL",    // Sarah - Mature, Reassuring, Confident (American female)
+  lily: "pFZP5JQG7iQjIQuC4Bku",      // Lily - Velvety Actress (British female)
+  alice: "Xb7hH8MSUJpSbSDYk0k2",     // Alice - Clear, Engaging Educator (British female)
+  bella: "hpp4J3VqNfWAUOO0d1Us",      // Bella - Professional, Bright (American female)
+  george: "JBFqnCBsd6RMkjVDRZzb",    // George - Warm, Captivating Storyteller (British male)
+  daniel: "onwK4e9ZLuTAKqWW03F9",    // Daniel - Steady Broadcaster (British male)
+  eric: "cjVigY5qzO86Huf0OWal",      // Eric - Smooth, Trustworthy (American male)
+  charlie: "IKne3meq5aSn9XLyUdCD",   // Charlie - Deep, Confident (Australian male)
 };
 
-/** Fallback voice for unknown persona names */
-const FALLBACK_VOICE_ID = "cjVigY5qzO86Huf0OWal"; // Eric - Smooth, Trustworthy
+/** Exact name → voice mapping for known demo personas */
+const EXACT_NAME_MAP: Record<string, string> = {
+  "Eleanor Vance": VOICES.sarah,
+  "David Chen": VOICES.george,
+  "Aisha Rahman": VOICES.lily,
+};
 
-/** Get the ElevenLabs voice ID for a persona name */
-export function getVoiceIdForPersona(personaName: string): string {
-  const match = PERSONA_VOICES[personaName];
-  if (match) return match.voiceId;
+/** Voice pools for round-robin assignment */
+const FEMALE_VOICE_POOL = [VOICES.sarah, VOICES.lily, VOICES.alice, VOICES.bella];
+const MALE_VOICE_POOL = [VOICES.george, VOICES.daniel, VOICES.eric, VOICES.charlie];
 
-  // Try partial match
-  for (const [name, voice] of Object.entries(PERSONA_VOICES)) {
+/** Track assigned voices within a session to ensure uniqueness */
+const sessionVoiceAssignments = new Map<string, string>();
+
+/**
+ * Get the ElevenLabs voice ID for a persona.
+ * Priority: exact name match → partial name match → round-robin from pool.
+ */
+export function getVoiceIdForPersona(personaName: string, personaIndex?: number): string {
+  // 1. Exact name match
+  if (EXACT_NAME_MAP[personaName]) {
+    return EXACT_NAME_MAP[personaName];
+  }
+
+  // 2. Already assigned in this session
+  if (sessionVoiceAssignments.has(personaName)) {
+    return sessionVoiceAssignments.get(personaName)!;
+  }
+
+  // 3. Partial first-name match against known names
+  for (const [name, voiceId] of Object.entries(EXACT_NAME_MAP)) {
     if (personaName.toLowerCase().includes(name.split(" ")[0].toLowerCase())) {
-      return voice.voiceId;
+      const alreadyUsed = new Set(sessionVoiceAssignments.values());
+      if (!alreadyUsed.has(voiceId)) {
+        sessionVoiceAssignments.set(personaName, voiceId);
+        return voiceId;
+      }
     }
   }
 
-  return FALLBACK_VOICE_ID;
+  // 4. Round-robin: alternate female/male for variety
+  const alreadyUsed = new Set(sessionVoiceAssignments.values());
+  const idx = personaIndex ?? sessionVoiceAssignments.size;
+  const pool = idx % 2 === 0 ? FEMALE_VOICE_POOL : MALE_VOICE_POOL;
+
+  for (const v of pool) {
+    if (!alreadyUsed.has(v)) {
+      sessionVoiceAssignments.set(personaName, v);
+      return v;
+    }
+  }
+
+  // Fallback: any unused voice
+  const allVoices = [...FEMALE_VOICE_POOL, ...MALE_VOICE_POOL];
+  for (const v of allVoices) {
+    if (!alreadyUsed.has(v)) {
+      sessionVoiceAssignments.set(personaName, v);
+      return v;
+    }
+  }
+
+  return VOICES.eric;
+}
+
+/** Reset voice assignments between sessions */
+export function resetVoiceAssignments(): void {
+  sessionVoiceAssignments.clear();
 }
 
 export interface SpeechOptions {
-  /** ElevenLabs voice ID */
   voiceId: string;
-  /** Stability: 0.0 (more variable) to 1.0 (more stable). Default 0.5 */
   stability?: number;
-  /** Similarity boost: 0.0 to 1.0. Default 0.75 */
   similarityBoost?: number;
-  /** Style exaggeration: 0.0 to 1.0. Default 0.0 */
   style?: number;
-  /** Speed: 0.25 to 4.0. Default 1.0 */
   speed?: number;
 }
 
@@ -112,8 +152,7 @@ export async function generateSpeech(
 }
 
 /**
- * Generate speech with emotion-tuned settings.
- * Adjusts stability, style, and speed based on the emotion tag.
+ * Get emotion-tuned voice settings for TTS.
  */
 export function getEmotionSettings(
   emotion: string,
@@ -126,7 +165,6 @@ export function getEmotionSettings(
     speed: 1.0,
   };
 
-  // Unhinged mode: faster, more expressive across the board
   if (isUnhinged) {
     base.stability = 0.3;
     base.style = 0.4;

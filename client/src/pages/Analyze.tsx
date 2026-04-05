@@ -26,6 +26,7 @@ export default function Analyze() {
   const [additionalContext, setAdditionalContext] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+  const [isDemo, setIsDemo] = useState(false);
 
   const toggleArchetype = (id: string) => {
     setSelectedArchetypes(prev =>
@@ -56,6 +57,7 @@ export default function Analyze() {
     setGeography(DEMO_DOCUMENT.geography);
     setSelectedArchetypes([...DEMO_DOCUMENT.archetypes]);
     setAdditionalContext(DEMO_DOCUMENT.additionalContext);
+    setIsDemo(true);
     setStep(2);
   };
 
@@ -77,6 +79,7 @@ export default function Analyze() {
       documentTitle,
       documentContent,
       contextData,
+      isDemo,
     }));
     navigate("/results");
   };

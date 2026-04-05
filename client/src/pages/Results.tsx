@@ -10,6 +10,10 @@ import {
 import { useLocation } from "wouter";
 import type { CritiqueData, PersonaData, ResearchLogEntry, DebateTurn } from "@shared/types";
 import DebatePlayer from "@/components/DebatePlayer";
+import {
+  DEMO_PERSONAS, DEMO_CRITIQUES, DEMO_STANDARD_DEBATE, DEMO_UNHINGED_DEBATE,
+  DEMO_TERMINAL_LOGS, DEMO_ROBUSTNESS_SCORE, DEMO_SCORE_EXPLANATION,
+} from "@/lib/demoData";
 
 const AVATAR_ICONS: Record<string, React.ReactNode> = {
   shield: <Shield className="w-5 h-5" />,
@@ -53,6 +57,9 @@ export default function Results() {
   const [documentTitle, setDocumentTitle] = useState("");
   const [debateTurns, setDebateTurns] = useState<DebateTurn[]>([]);
   const [debateReady, setDebateReady] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  // Phase tracking for demo progressive reveal
+  const [demoPhase, setDemoPhase] = useState<"terminal" | "personas" | "debate" | "critiques" | "done">("terminal");
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef(Date.now());
@@ -87,6 +94,59 @@ export default function Results() {
     return () => clearInterval(interval);
   }, [robustnessScore]);
 
+  // ===== DEMO MODE: Fast progressive reveal =====
+  const runDemoMode = useCallback(async () => {
+    setIsDemoMode(true);
+    setDemoPhase("terminal");
+    setDocumentTitle("Project Aegis: Southeast Asia Market Entry Strategy");
+
+    // Phase 1: Fast terminal playback (100ms per line)
+    for (let i = 0; i < DEMO_TERMINAL_LOGS.length; i++) {
+      setLogs(prev => [...prev, { ...DEMO_TERMINAL_LOGS[i], timestamp: new Date().toISOString() }]);
+      // Faster for search/analyze lines, slower for complete/inject lines
+      const delay = DEMO_TERMINAL_LOGS[i].logType === "complete" || DEMO_TERMINAL_LOGS[i].logType === "inject" ? 200 : 100;
+      await new Promise(r => setTimeout(r, delay));
+
+      // Show personas as they appear in the terminal
+      if (i === 8) { // After "Persona created: Eleanor Vance"
+        setPersonas(prev => [...prev, DEMO_PERSONAS[0]]);
+        setDemoPhase("personas");
+      }
+      if (i === 9) { // After "Persona created: David Chen"
+        setPersonas(prev => [...prev, DEMO_PERSONAS[1]]);
+      }
+      if (i === 10) { // After "Persona created: Aisha Rahman"
+        setPersonas(prev => [...prev, DEMO_PERSONAS[2]]);
+      }
+    }
+
+    // Phase 2: Show robustness score
+    await new Promise(r => setTimeout(r, 300));
+    setRobustnessScore(DEMO_ROBUSTNESS_SCORE);
+    setScoreExplanation(DEMO_SCORE_EXPLANATION);
+
+    // Phase 3: Show debate and auto-play
+    await new Promise(r => setTimeout(r, 500));
+    setDebateTurns(DEMO_STANDARD_DEBATE);
+    setDebateReady(true);
+    setDemoPhase("debate");
+
+    // Phase 4: Show critiques after a brief delay (they appear while debate plays)
+    await new Promise(r => setTimeout(r, 2000));
+    setDemoPhase("critiques");
+    for (let i = 0; i < DEMO_CRITIQUES.length; i++) {
+      setCritiques(prev => [...prev, DEMO_CRITIQUES[i]]);
+      if (i === 0) setExpandedCritiques(new Set([DEMO_CRITIQUES[0].id]));
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    // Mark complete
+    setIsComplete(true);
+    setDemoPhase("done");
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
+
+  // ===== LIVE MODE: SSE streaming =====
   const handleSSEEvent = useCallback((event: { type: string; data: unknown; timestamp: string }) => {
     switch (event.type) {
       case "research_log": {
@@ -102,7 +162,6 @@ export default function Results() {
       case "critique_generated": {
         const critique = event.data as CritiqueData;
         setCritiques(prev => [...prev, critique]);
-        // Auto-expand first critique
         setCritiques(prev => {
           if (prev.length === 1) {
             setExpandedCritiques(new Set([prev[0].id]));
@@ -157,6 +216,13 @@ export default function Results() {
     sessionStorage.removeItem("warRoomPayload");
     setDocumentTitle(payload.documentTitle || "Untitled Document");
 
+    // Check if this is a demo run
+    if (payload.isDemo) {
+      runDemoMode();
+      return;
+    }
+
+    // Live mode: SSE streaming
     const startAnalysis = async () => {
       try {
         const response = await fetch("/api/war-room/analyze", {
@@ -203,7 +269,7 @@ export default function Results() {
     };
 
     startAnalysis();
-  }, [navigate, handleSSEEvent]);
+  }, [navigate, handleSSEEvent, runDemoMode]);
 
   // Auto-scroll terminal
   useEffect(() => {
@@ -211,6 +277,11 @@ export default function Results() {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [logs]);
+
+  // In demo mode, switch debate turns when unhinged mode toggles
+  const currentDebateTurns = isDemoMode
+    ? (unhingedMode ? DEMO_UNHINGED_DEBATE : DEMO_STANDARD_DEBATE)
+    : debateTurns;
 
   const toggleCritique = (id: number) => {
     setExpandedCritiques(prev => {
@@ -322,8 +393,8 @@ export default function Results() {
                 {logs.map((log, i) => (
                   <div
                     key={i}
-                    className={`mb-0.5 ${LOG_TYPE_COLORS[log.logType] || "text-[#8A8A8A]"} animate-in fade-in slide-in-from-left-2 duration-300`}
-                    style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}
+                    className={`mb-0.5 ${LOG_TYPE_COLORS[log.logType] || "text-[#8A8A8A]"} ${isDemoMode ? "" : "animate-in fade-in slide-in-from-left-2 duration-300"}`}
+                    style={isDemoMode ? undefined : { animationDelay: `${Math.min(i * 30, 300)}ms` }}
                   >
                     {log.message}
                   </div>
@@ -391,7 +462,7 @@ export default function Results() {
             )}
           </div>
 
-          {/* Right column: Score + Critiques */}
+          {/* Right column: Score + Debate + Critiques */}
           <div className="lg:col-span-8 space-y-4">
             {/* Robustness Score */}
             {robustnessScore !== null && (
@@ -414,7 +485,6 @@ export default function Results() {
                     <div className="text-[10px] text-[#555] mt-0.5 font-mono">/ 100</div>
                   </div>
                 </div>
-                {/* Score bar */}
                 <div className="mt-4 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
@@ -428,12 +498,13 @@ export default function Results() {
             )}
 
             {/* Boardroom Debate Player */}
-            {debateTurns.length > 0 && (
+            {currentDebateTurns.length > 0 && debateReady && (
               <div className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                 <DebatePlayer
-                  turns={debateTurns}
+                  turns={currentDebateTurns}
                   personas={personas}
                   isUnhinged={unhingedMode}
+                  autoPlay={isDemoMode}
                 />
               </div>
             )}
@@ -503,7 +574,6 @@ export default function Results() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 ml-4">
-                          {/* Confidence Score */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-1 cursor-help">
@@ -608,7 +678,7 @@ export default function Results() {
             )}
 
             {/* Loading state when no critiques yet */}
-            {!isComplete && !isError && critiques.length === 0 && (
+            {!isComplete && !isError && critiques.length === 0 && !isDemoMode && (
               <div className="bg-[#111] border border-white/5 rounded-xl p-16 text-center">
                 <div className="relative w-20 h-20 mx-auto mb-6">
                   <div className="absolute inset-0 border-2 border-[#FF4C4C]/20 rounded-full" />

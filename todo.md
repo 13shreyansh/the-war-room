@@ -65,3 +65,14 @@
 - [x] Unhinged Mode debate variant (heated, personal, consulting jargon)
 - [x] End-to-end test: full pipeline with audio debate (10/10 turns with audio, sequential playback working)
 - [ ] Review 5.5: Human review of debate audio quality
+
+## Demo Experience Overhaul (User Feedback)
+- [x] Pre-generate all demo content (personas, critiques, debate scripts, audio) for instant playback
+- [x] Fix voice assignments: female voices for female personas, male for male
+- [x] Rewrite debate script prompts for real conflict, interruptions, drama
+- [x] Generate both standard AND unhinged debate scripts with audio (20 files on CDN)
+- [x] Make debate auto-play immediately after personas appear (no play button needed)
+- [x] Self-running demo mode: no user interaction after clicking "Try the Demo"
+- [x] Unhinged Mode toggle should visibly change the debate audio/script in demo
+- [x] Eliminate all dead time in demo flow — everything should feel instant (0:08 total)
+- [x] Make the debate actually interesting — real fighting, not polite discussion
