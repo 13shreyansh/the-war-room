@@ -1,11 +1,16 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser, users,
+  sessions, InsertSession, Session,
+  personas, InsertPersona, Persona,
+  critiques, InsertCritique, Critique,
+  researchLogs, InsertResearchLog, ResearchLog,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -17,6 +22,10 @@ export async function getDb() {
   }
   return _db;
 }
+
+// ============================================================
+// USER QUERIES (from scaffold)
+// ============================================================
 
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -89,4 +98,87 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============================================================
+// SESSION QUERIES
+// ============================================================
+
+export async function createSession(data: InsertSession): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(sessions).values(data);
+  return result[0].insertId;
+}
+
+export async function getSession(id: number): Promise<Session | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateSessionStatus(id: number, status: Session["status"], robustnessScore?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: Partial<Session> = { status };
+  if (robustnessScore !== undefined) {
+    updateData.robustnessScore = robustnessScore;
+  }
+  await db.update(sessions).set(updateData).where(eq(sessions.id, id));
+}
+
+export async function getUserSessions(userId: number): Promise<Session[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(sessions).where(eq(sessions.userId, userId));
+}
+
+// ============================================================
+// PERSONA QUERIES
+// ============================================================
+
+export async function createPersona(data: InsertPersona): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(personas).values(data);
+  return result[0].insertId;
+}
+
+export async function getSessionPersonas(sessionId: number): Promise<Persona[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(personas).where(eq(personas.sessionId, sessionId));
+}
+
+// ============================================================
+// CRITIQUE QUERIES
+// ============================================================
+
+export async function createCritique(data: InsertCritique): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(critiques).values(data);
+  return result[0].insertId;
+}
+
+export async function getSessionCritiques(sessionId: number): Promise<Critique[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(critiques).where(eq(critiques.sessionId, sessionId));
+}
+
+// ============================================================
+// RESEARCH LOG QUERIES
+// ============================================================
+
+export async function createResearchLog(data: InsertResearchLog): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(researchLogs).values(data);
+  return result[0].insertId;
+}
+
+export async function getSessionResearchLogs(sessionId: number): Promise<ResearchLog[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(researchLogs).where(eq(researchLogs.sessionId, sessionId));
+}
