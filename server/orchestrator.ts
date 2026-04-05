@@ -17,9 +17,12 @@ import {
   generateCritiques,
   moderateCritiques,
   rewriteUnhinged,
+  generateDebateScript,
   type GeneratedPersona,
   type GeneratedCritique,
 } from "./agents";
+import { generateSpeech, getVoiceIdForPersona, getEmotionSettings } from "./elevenlabs";
+import { storagePut } from "./storage";
 import {
   createSession,
   createPersona,
@@ -27,7 +30,7 @@ import {
   createResearchLog,
   updateSessionStatus,
 } from "./db";
-import type { ContextFormData, CritiqueData, PersonaData } from "@shared/types";
+import type { ContextFormData, CritiqueData, PersonaData, DebateTurn } from "@shared/types";
 
 export type EventEmitter = (type: string, data: unknown) => void;
 
@@ -145,6 +148,66 @@ export async function runAnalysis(
     );
 
     emit("research_log", { message: `> Unhinged Mode rewrites complete.`, logType: "complete" });
+
+    // Step 6.5: Generate Boardroom Debate
+    emit("research_log", { message: `> Generating boardroom debate script...`, logType: "analyze" });
+
+    const debatePersonas = savedPersonas.map(sp => ({
+      name: sp.generated.name,
+      role: sp.generated.role,
+      perspective: sp.generated.perspective,
+    }));
+
+    const debateCritiques = survivingCritiques.map(sc => ({
+      personaName: sc.personaName,
+      title: sc.critique.title,
+      attack: sc.critique.attack,
+    }));
+
+    // Generate both standard and unhinged debate scripts
+    const debateScript = await generateDebateScript(debatePersonas, debateCritiques, false);
+    emit("research_log", { message: `> Debate script ready. ${debateScript.length} turns generated.`, logType: "complete" });
+
+    // Generate audio for each turn using ElevenLabs
+    const debateTurns: DebateTurn[] = [];
+    for (let i = 0; i < debateScript.length; i++) {
+      const turn = debateScript[i];
+      const voiceId = getVoiceIdForPersona(turn.speaker);
+      emit("research_log", { message: `> Synthesizing voice: ${turn.speaker} (turn ${i + 1}/${debateScript.length})...`, logType: "analyze" });
+
+      let audioUrl: string | undefined;
+      try {
+        const emotionSettings = getEmotionSettings(turn.emotion, false);
+        const audioBuffer = await generateSpeech(turn.text, {
+          voiceId,
+          ...emotionSettings,
+        });
+
+        // Upload to S3
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const fileKey = `debate-audio/${sessionId}/turn-${i}-${randomSuffix}.mp3`;
+        const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+        audioUrl = url;
+      } catch (err) {
+        console.error(`[Orchestrator] TTS failed for turn ${i}:`, err);
+        // Continue without audio — frontend will fall back to text-only
+      }
+
+      const debateTurn: DebateTurn = {
+        index: i,
+        speaker: turn.speaker,
+        voiceId,
+        text: turn.text,
+        emotion: turn.emotion,
+        audioUrl,
+      };
+
+      debateTurns.push(debateTurn);
+      emit("debate_turn", debateTurn);
+    }
+
+    emit("research_log", { message: `> Boardroom debate ready. ${debateTurns.filter(t => t.audioUrl).length}/${debateTurns.length} turns with audio.`, logType: "complete" });
+    emit("debate_ready", { turns: debateTurns, isUnhinged: false, totalDurationEstimate: debateTurns.length * 5 });
 
     // Step 7: Save critiques to DB and emit
     const savedCritiques: CritiqueData[] = [];

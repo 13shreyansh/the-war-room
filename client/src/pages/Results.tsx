@@ -8,7 +8,8 @@ import {
   FileText, Clock, Sparkles
 } from "lucide-react";
 import { useLocation } from "wouter";
-import type { CritiqueData, PersonaData, ResearchLogEntry } from "@shared/types";
+import type { CritiqueData, PersonaData, ResearchLogEntry, DebateTurn } from "@shared/types";
+import DebatePlayer from "@/components/DebatePlayer";
 
 const AVATAR_ICONS: Record<string, React.ReactNode> = {
   shield: <Shield className="w-5 h-5" />,
@@ -50,6 +51,8 @@ export default function Results() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [documentTitle, setDocumentTitle] = useState("");
+  const [debateTurns, setDebateTurns] = useState<DebateTurn[]>([]);
+  const [debateReady, setDebateReady] = useState(false);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef(Date.now());
@@ -112,6 +115,15 @@ export default function Results() {
         const { score, explanation } = event.data as { score: number; explanation: string };
         setRobustnessScore(score);
         setScoreExplanation(explanation);
+        break;
+      }
+      case "debate_turn": {
+        const turn = event.data as DebateTurn;
+        setDebateTurns(prev => [...prev, turn]);
+        break;
+      }
+      case "debate_ready": {
+        setDebateReady(true);
         break;
       }
       case "session_complete":
@@ -412,6 +424,17 @@ export default function Results() {
                     }}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Boardroom Debate Player */}
+            {debateTurns.length > 0 && (
+              <div className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+                <DebatePlayer
+                  turns={debateTurns}
+                  personas={personas}
+                  isUnhinged={unhingedMode}
+                />
               </div>
             )}
 

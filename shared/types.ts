@@ -56,12 +56,31 @@ export interface CritiqueData {
   documentSection: string | null;
 }
 
+/** A single turn in the boardroom debate */
+export interface DebateTurn {
+  index: number;
+  speaker: string;
+  voiceId: string;
+  text: string;
+  emotion: "neutral" | "assertive" | "aggressive" | "dismissive" | "frustrated" | "sarcastic";
+  audioUrl?: string;
+}
+
+/** Full debate data sent to the frontend */
+export interface DebateData {
+  turns: DebateTurn[];
+  isUnhinged: boolean;
+  totalDurationEstimate: number; // seconds
+}
+
 /** SSE event types for the live terminal */
 export type SSEEventType =
   | "research_log"
   | "persona_created"
   | "critique_generated"
   | "robustness_score"
+  | "debate_turn"
+  | "debate_ready"
   | "session_complete"
   | "session_error";
 

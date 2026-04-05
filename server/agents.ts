@@ -372,3 +372,113 @@ Focus on current (2025-2026) market dynamics, regulatory environment, and compet
   if (!content || typeof content !== "string") throw new Error("No research response");
   return content;
 }
+
+// ============================================================
+// BOARDROOM DEBATE SCRIPT GENERATOR
+// ============================================================
+
+const DEBATE_PROMPT_STANDARD = `You are a scriptwriter for a high-stakes boardroom debate. Three senior stakeholders are reviewing a consulting strategy document and they DISAGREE on the most critical vulnerabilities.
+
+Write a realistic, heated boardroom debate where the stakeholders challenge each other's critiques, build on each other's points, and escalate the tension. This should feel like a real executive meeting where people are passionate about protecting the company.
+
+Rules:
+- Write exactly 8-10 turns of dialogue
+- Each turn is 1-3 sentences (keep it punchy, not monologues)
+- Stakeholders should REFERENCE each other's points ("Building on what Eleanor said..." or "I disagree with David here...")
+- Include natural interruptions and pushback
+- Escalate tension through the debate — start measured, get more pointed
+- Each speaker should stay in character (CFO talks numbers, Board talks risk, Ops talks execution)
+- End with a moment of reluctant agreement on the biggest vulnerability
+
+You MUST respond with valid JSON matching the schema exactly.`;
+
+const DEBATE_PROMPT_UNHINGED = `You are a scriptwriter for the most TOXIC boardroom meeting ever recorded. Three senior stakeholders are tearing apart a consulting strategy document and each other. This is a 2 AM emergency meeting and everyone is exhausted, angry, and done with corporate niceties.
+
+Write a brutal, darkly funny boardroom debate where the stakeholders:
+- Openly mock each other's concerns
+- Use passive-aggressive consulting jargon ("With all due respect, that's the worst take I've heard since the Canada expansion")
+- Interrupt each other mid-sentence
+- Reference past failures and embarrassments
+- Get increasingly personal while maintaining plausible deniability
+
+Rules:
+- Write exactly 8-10 turns of dialogue
+- Each turn is 1-3 sentences (punchy, aggressive, no monologues)
+- Use toxic consulting jargon: "pls fix", "per my last email", "let's take this offline" (said sarcastically), "boil the ocean", "circle back", "did you even read the SOW?"
+- Include at least one moment where someone says something genuinely cutting
+- End with a reluctant, bitter agreement
+- Attack the WORK and the LOGIC, never make it about identity
+
+You MUST respond with valid JSON matching the schema exactly.`;
+
+export interface DebateScriptTurn {
+  speaker: string;
+  text: string;
+  emotion: "neutral" | "assertive" | "aggressive" | "dismissive" | "frustrated" | "sarcastic";
+}
+
+export async function generateDebateScript(
+  personas: { name: string; role: string; perspective: string }[],
+  critiques: { personaName: string; title: string; attack: string }[],
+  isUnhinged: boolean
+): Promise<DebateScriptTurn[]> {
+  const personaContext = personas
+    .map(p => `${p.name} (${p.role}): "${p.perspective}"`)
+    .join("\n");
+
+  const critiqueContext = critiques
+    .map((c, i) => `[${i + 1}] ${c.personaName}: "${c.title}" — ${c.attack}`)
+    .join("\n\n");
+
+  const response = await invokeLLM({
+    messages: [
+      { role: "system", content: isUnhinged ? DEBATE_PROMPT_UNHINGED : DEBATE_PROMPT_STANDARD },
+      {
+        role: "user",
+        content: `The stakeholders in this debate:
+${personaContext}
+
+The critiques they've raised about the strategy document:
+${critiqueContext}
+
+Write the boardroom debate. Each speaker must be one of the named personas above. Make it feel real and heated.`
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "debate_script",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            turns: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  speaker: { type: "string", description: "Full name of the persona speaking (must match exactly)" },
+                  text: { type: "string", description: "What they say — 1-3 sentences, punchy and in character" },
+                  emotion: {
+                    type: "string",
+                    enum: ["neutral", "assertive", "aggressive", "dismissive", "frustrated", "sarcastic"],
+                    description: "The emotional tone of this line"
+                  },
+                },
+                required: ["speaker", "text", "emotion"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["turns"],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content || typeof content !== "string") throw new Error("No debate script response");
+  const parsed = JSON.parse(content);
+  return parsed.turns;
+}

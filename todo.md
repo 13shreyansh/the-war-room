@@ -52,3 +52,16 @@
 ## Bug Fixes (User Reported)
 - [x] Fix overlapping dropdown menus on Analyze page (Company Size overlaps Geography)
 - [x] Fix Unhinged toggle not visibly working (replaced with custom button toggle)
+
+## Phase 3.5: Audio Boardroom Debate (NEW)
+- [x] Set up ElevenLabs API key and validate (2 tests passing)
+- [x] Build ElevenLabs TTS helper (server/elevenlabs.ts)
+- [x] Build debate script generator LLM agent (server/agents.ts)
+- [x] Wire debate generation into orchestrator pipeline (Step 6.5)
+- [x] Build Boardroom Debate player UI component (client)
+- [x] Persona avatar pulse/glow sync during playback
+- [x] Play/pause controls with sequential turn playback
+- [x] Upload debate audio clips to S3 and stream URLs via SSE
+- [x] Unhinged Mode debate variant (heated, personal, consulting jargon)
+- [x] End-to-end test: full pipeline with audio debate (10/10 turns with audio, sequential playback working)
+- [ ] Review 5.5: Human review of debate audio quality
