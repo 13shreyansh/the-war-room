@@ -194,11 +194,11 @@ export default function Analyze() {
             </div>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="min-w-0">
                   <Label className="text-sm text-[#8A8A8A] mb-2 block">Industry</Label>
                   <Select value={industry} onValueChange={setIndustry}>
-                    <SelectTrigger className="bg-[#121212] border-white/10 text-white h-12">
+                    <SelectTrigger className="w-full bg-[#121212] border-white/10 text-white h-12 overflow-hidden">
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-white/10">
@@ -208,10 +208,10 @@ export default function Analyze() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label className="text-sm text-[#8A8A8A] mb-2 block">Company Size</Label>
                   <Select value={companySize} onValueChange={setCompanySize}>
-                    <SelectTrigger className="bg-[#121212] border-white/10 text-white h-12">
+                    <SelectTrigger className="w-full bg-[#121212] border-white/10 text-white h-12 overflow-hidden">
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-white/10">
@@ -221,10 +221,10 @@ export default function Analyze() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Label className="text-sm text-[#8A8A8A] mb-2 block">Geography</Label>
                   <Select value={geography} onValueChange={setGeography}>
-                    <SelectTrigger className="bg-[#121212] border-white/10 text-white h-12">
+                    <SelectTrigger className="w-full bg-[#121212] border-white/10 text-white h-12 overflow-hidden">
                       <SelectValue placeholder="Select region" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-white/10">

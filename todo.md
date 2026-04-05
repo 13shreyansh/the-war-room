@@ -48,3 +48,7 @@
 - [x] Limit Moderator to top 3 critiques (not all surviving)
 - [x] Show persona avatar icons on critique card headers
 - [x] Update demo document to include geography
+
+## Bug Fixes (User Reported)
+- [x] Fix overlapping dropdown menus on Analyze page (Company Size overlaps Geography)
+- [x] Fix Unhinged toggle not visibly working (replaced with custom button toggle)

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Shield, ArrowLeft, Terminal, AlertTriangle, CheckCircle, Info,
@@ -264,15 +263,16 @@ export default function Results() {
             <span className="text-xs font-mono">{formatTime(elapsedTime)}</span>
           </div>
           {/* Unhinged toggle */}
-          <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border transition-all duration-300 ${unhingedMode ? "border-[#FF4C4C]/40 bg-[#FF4C4C]/10" : "border-white/5 bg-transparent hover:border-white/10"}`}>
-            <Flame className={`w-4 h-4 transition-colors duration-300 ${unhingedMode ? "text-[#FF4C4C] animate-pulse" : "text-[#555]"}`} />
-            <span className={`text-[11px] uppercase tracking-widest font-bold transition-colors duration-300 hidden sm:inline ${unhingedMode ? "text-[#FF4C4C]" : "text-[#555]"}`}>Unhinged</span>
-            <Switch
-              checked={unhingedMode}
-              onCheckedChange={setUnhingedMode}
-              className="data-[state=checked]:bg-[#FF4C4C]"
-            />
-          </div>
+          <button
+            onClick={() => setUnhingedMode(!unhingedMode)}
+            className={`flex items-center gap-2.5 px-4 py-2 rounded-lg border transition-all duration-300 cursor-pointer select-none ${unhingedMode ? "border-[#FF4C4C]/50 bg-[#FF4C4C]/15 shadow-[0_0_12px_rgba(255,76,76,0.2)]" : "border-white/10 bg-[#1A1A1A] hover:border-white/20 hover:bg-[#222]"}`}
+          >
+            <Flame className={`w-4 h-4 transition-colors duration-300 ${unhingedMode ? "text-[#FF4C4C] animate-pulse" : "text-[#666]"}`} />
+            <span className={`text-xs uppercase tracking-wider font-bold transition-colors duration-300 ${unhingedMode ? "text-[#FF4C4C]" : "text-[#888]"}`}>Unhinged</span>
+            <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${unhingedMode ? "bg-[#FF4C4C]" : "bg-[#333]"}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-300 ${unhingedMode ? "left-[22px] bg-white shadow-[0_0_6px_rgba(255,76,76,0.5)]" : "left-0.5 bg-[#888]"}`} />
+            </div>
+          </button>
         </div>
       </nav>
 
