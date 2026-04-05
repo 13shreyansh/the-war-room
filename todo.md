@@ -76,3 +76,46 @@
 - [x] Unhinged Mode toggle should visibly change the debate audio/script in demo
 - [x] Eliminate all dead time in demo flow — everything should feel instant (0:08 total)
 - [x] Make the debate actually interesting — real fighting, not polite discussion
+
+## Demo Cinematic Redesign (User Feedback Round 2)
+- [x] Fix audio overlap bug: stop current audio before switching on Unhinged toggle (generation token pattern)
+- [x] Fix audio errors when toggling mid-playback (generation token pattern)
+- [ ] Add realistic pacing to terminal (15-20 seconds, not 2 seconds)
+- [ ] Add narrative framing: explain what's happening and why at each phase
+- [ ] Add boardroom debate intro/preface explaining context
+- [ ] Make the demo self-running for full 2 minutes (no narration needed)
+- [ ] Add phase transition cards between major sections
+- [ ] Stagger persona reveals with weight (not all at once)
+- [ ] Make the demo tell the complete story by itself
+- [ ] Test full 2-minute flow end-to-end
+
+## PRD Phase 3: Narration Audio
+- [x] Generate 14 narration audio clips via ElevenLabs (Daniel voice)
+- [x] Upload all clips to CDN (14/14 success)
+- [x] Create demoNarration.ts with CDN URLs and timing data
+- [x] Measure exact durations for each clip
+
+## PRD Phase 4: Cinematic /demo Page
+- [x] Create Demo.tsx with full cinematic experience
+- [x] Scene 1: Title Card (67% stat + problem narration)
+- [x] Scene 2: Solution Intro (War Room reveal)
+- [x] Scene 3: Live Demo — Upload simulation
+- [x] Scene 4: Live Demo — Research Terminal
+- [x] Scene 5: Persona Reveal (staggered)
+- [x] Scene 6: The Fight (debate audio plays)
+- [x] Scene 7: Unhinged Mode auto-activation
+- [x] Scene 8: Results + Close (score + CTA)
+- [x] Progress bar at bottom
+- [x] Skip and Exit buttons
+- [x] Register /demo route in App.tsx
+
+## PRD Phase 5: Homepage Integration
+- [x] Add "Watch the Demo" button to homepage hero (Play icon, outline variant)
+- [x] Two CTAs side by side: Launch War Room + Watch Demo
+
+## PRD Phase 6-7: Full End-to-End Testing
+- [x] Test every page and flow
+- [x] Produce test report (phase67_test_report.md — ALL PASS)
+
+## PRD Phase 8: Final Polish
+- [x] Final checkpoint and delivery

@@ -45,6 +45,11 @@ export default function DebatePlayer({
   const autoPlayTriggered = useRef(false);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
+  // Generation token: incremented every time we start a new playback sequence.
+  // Each playTurn chain checks this token before proceeding to the next turn.
+  // If the token has changed (e.g., due to Unhinged toggle), the old chain aborts.
+  const generationTokenRef = useRef(0);
+
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
@@ -64,12 +69,18 @@ export default function DebatePlayer({
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = "";
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load(); // Force release of audio resources
       audioRef.current = null;
     }
   }, []);
 
-  const playTurn = useCallback(async (index: number) => {
+  const playTurn = useCallback(async (index: number, token: number) => {
+    // GUARD: If the generation token has changed, this chain is stale — abort.
+    if (token !== generationTokenRef.current) {
+      return;
+    }
+
     if (index >= turns.length) {
       setIsPlaying(false);
       onDebateComplete?.();
@@ -81,7 +92,6 @@ export default function DebatePlayer({
 
     // Add to transcript
     setTranscript(prev => {
-      // Avoid duplicates
       if (prev.some(t => t.index === turn.index && t.speaker === turn.speaker && t.text === turn.text)) return prev;
       return [...prev, turn];
     });
@@ -98,6 +108,13 @@ export default function DebatePlayer({
           audio.onended = () => resolve();
           audio.onerror = () => reject(new Error("Audio playback failed"));
           audio.oncanplaythrough = () => {
+            // Check token again before playing — may have changed during load
+            if (token !== generationTokenRef.current) {
+              audio.pause();
+              audio.removeAttribute("src");
+              resolve();
+              return;
+            }
             setIsLoadingAudio(false);
             audio.play().catch(reject);
           };
@@ -106,31 +123,53 @@ export default function DebatePlayer({
       } catch (err) {
         console.error("Audio playback error:", err);
         setIsLoadingAudio(false);
-        await new Promise(r => setTimeout(r, Math.max(1500, turn.text.length * 35)));
+        if (token === generationTokenRef.current) {
+          await new Promise(r => setTimeout(r, Math.max(1500, turn.text.length * 35)));
+        }
       }
     } else {
-      // No audio or muted — show text for a calculated duration
-      await new Promise(r => setTimeout(r, Math.max(1200, turn.text.length * 35)));
+      if (token === generationTokenRef.current) {
+        await new Promise(r => setTimeout(r, Math.max(1200, turn.text.length * 35)));
+      }
+    }
+
+    // GUARD: Check token again before proceeding to next turn
+    if (token !== generationTokenRef.current) {
+      return;
     }
 
     // Brief pause between turns
     await new Promise(r => setTimeout(r, 300));
 
+    // GUARD: Final check before recursion
+    if (token !== generationTokenRef.current) {
+      return;
+    }
+
     if (isPlayingRef.current) {
-      playTurn(index + 1);
+      playTurn(index + 1, token);
     }
   }, [turns, isMuted, stopAudio, onDebateComplete]);
+
+  // Start a new playback sequence with a fresh generation token
+  const startPlayback = useCallback((fromIndex: number) => {
+    generationTokenRef.current += 1;
+    const token = generationTokenRef.current;
+    stopAudio();
+    setIsLoadingAudio(false);
+    setIsPlaying(true);
+    playTurn(fromIndex, token);
+  }, [stopAudio, playTurn]);
 
   // Auto-play when turns become available
   useEffect(() => {
     if (autoPlay && turns.length > 0 && !autoPlayTriggered.current && !hasStarted) {
       autoPlayTriggered.current = true;
       setHasStarted(true);
-      setIsPlaying(true);
       setTranscript([]);
-      playTurn(0);
+      startPlayback(0);
     }
-  }, [autoPlay, turns.length, hasStarted, playTurn]);
+  }, [autoPlay, turns.length, hasStarted, startPlayback]);
 
   // When turns change (e.g., switching between standard and unhinged), restart
   const turnsKey = turns.map(t => t.audioUrl || t.text.slice(0, 20)).join("|");
@@ -138,46 +177,41 @@ export default function DebatePlayer({
   useEffect(() => {
     if (prevTurnsKeyRef.current !== turnsKey && hasStarted) {
       prevTurnsKeyRef.current = turnsKey;
-      // Turns changed (unhinged toggle) — restart from beginning
-      stopAudio();
+      // Turns changed (unhinged toggle) — restart from beginning with new token
       setCurrentTurnIndex(-1);
       setTranscript([]);
-      setIsPlaying(true);
-      // Small delay to let state settle
-      setTimeout(() => playTurn(0), 100);
+      setTimeout(() => startPlayback(0), 100);
     }
-  }, [turnsKey, hasStarted, stopAudio, playTurn]);
+  }, [turnsKey, hasStarted, startPlayback]);
 
   const handlePlay = useCallback(() => {
     if (!hasStarted) {
       setHasStarted(true);
-      setIsPlaying(true);
       setTranscript([]);
-      playTurn(0);
+      startPlayback(0);
     } else if (currentTurnIndex >= turns.length - 1 && !isPlaying) {
       // Restart from beginning
       setTranscript([]);
-      setIsPlaying(true);
-      playTurn(0);
+      startPlayback(0);
     } else {
-      setIsPlaying(true);
-      playTurn(currentTurnIndex >= 0 ? currentTurnIndex : 0);
+      startPlayback(currentTurnIndex >= 0 ? currentTurnIndex : 0);
     }
-  }, [hasStarted, currentTurnIndex, turns.length, isPlaying, playTurn]);
+  }, [hasStarted, currentTurnIndex, turns.length, isPlaying, startPlayback]);
 
   const handlePause = useCallback(() => {
     setIsPlaying(false);
+    // Increment token to stop the current chain from advancing
+    generationTokenRef.current += 1;
     if (audioRef.current) {
       audioRef.current.pause();
     }
   }, []);
 
   const handleSkip = useCallback(() => {
-    stopAudio();
     if (currentTurnIndex < turns.length - 1) {
-      playTurn(currentTurnIndex + 1);
+      startPlayback(currentTurnIndex + 1);
     }
-  }, [currentTurnIndex, turns.length, playTurn, stopAudio]);
+  }, [currentTurnIndex, turns.length, startPlayback]);
 
   const handleMuteToggle = useCallback(() => {
     setIsMuted(prev => !prev);
@@ -186,9 +220,10 @@ export default function DebatePlayer({
     }
   }, [isMuted]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — stop audio and invalidate all chains
   useEffect(() => {
     return () => {
+      generationTokenRef.current += 1;
       stopAudio();
     };
   }, [stopAudio]);

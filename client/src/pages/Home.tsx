@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
-import { Shield, Zap, Target, ArrowRight } from "lucide-react";
+import { Shield, Zap, Target, ArrowRight, Play } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Home() {
@@ -62,14 +62,14 @@ export default function Home() {
             live industry research — will find every weakness before your client does.
           </p>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             {isAuthenticated ? (
               <Button
                 onClick={() => navigate("/analyze")}
                 size="lg"
                 className="bg-[#FF4C4C] hover:bg-[#E04343] text-white font-semibold px-8 py-6 text-lg rounded-xl"
               >
-                Upload Your Document <ArrowRight className="w-5 h-5 ml-2" />
+                Launch War Room <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             ) : (
               <Button
@@ -80,6 +80,14 @@ export default function Home() {
                 Sign In to Get Started <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             )}
+            <Button
+              onClick={() => navigate("/demo")}
+              size="lg"
+              variant="outline"
+              className="border-[#FF4C4C]/40 text-[#FF4C4C] hover:bg-[#FF4C4C]/10 font-semibold px-8 py-6 text-lg rounded-xl"
+            >
+              <Play className="w-5 h-5 mr-2 fill-current" /> Watch the Demo
+            </Button>
           </div>
         </div>
 
