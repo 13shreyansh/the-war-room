@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
-import { Shield, Zap, Target, ArrowRight, Play } from "lucide-react";
+import { Shield, Zap, Target, ArrowRight, Play, Github } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Home() {
@@ -21,7 +21,16 @@ export default function Home() {
           </div>
           <span className="text-xl font-bold tracking-tight font-['Inter']">THE WAR ROOM</span>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/13shreyansh/the-war-room"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-[#888] hover:text-white"
+            title="View on GitHub"
+          >
+            <Github className="w-5 h-5" />
+          </a>
           {isAuthenticated ? (
             <Button
               onClick={() => navigate("/analyze")}

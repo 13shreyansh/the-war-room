@@ -119,3 +119,8 @@
 
 ## PRD Phase 8: Final Polish
 - [x] Final checkpoint and delivery
+
+## Bug Fixes (Post-Delivery)
+- [x] Fix demo progress bar: sync to actual scene completion, not fixed 2-min estimate
+- [x] Fix debate auto-scroll: removed scrollIntoView, users can scroll manually
+- [x] Add GitHub repo link with GitHub icon to homepage nav (https://github.com/13shreyansh/the-war-room)

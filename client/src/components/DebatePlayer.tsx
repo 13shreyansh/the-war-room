@@ -54,12 +54,8 @@ export default function DebatePlayer({
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // Auto-scroll transcript
-  useEffect(() => {
-    if (transcriptEndRef.current) {
-      transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [transcript]);
+  // Auto-scroll removed: users want to read the transcript while listening
+  // The transcript area is scrollable so users can scroll manually if needed
 
   const getPersonaColor = useCallback((speakerName: string) => {
     const idx = personas.findIndex(p => p.name === speakerName);

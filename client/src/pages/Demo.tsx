@@ -121,18 +121,8 @@ export default function Demo() {
   const terminalRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Calculate total duration for progress bar
-  const totalDurationMs = useMemo(() => {
-    let total = 0;
-    for (const scene of SCENES) {
-      for (const nId of scene.narrationIds) {
-        const seg = NARRATION_SEGMENTS.find((s) => s.id === nId);
-        if (seg) total += seg.durationMs;
-      }
-      total += scene.extraDurationMs;
-    }
-    return total;
-  }, []);
+  // Total scene count for progress calculation
+  const totalScenes = SCENES.length;
 
   // Cleanup on unmount
   useEffect(() => {
@@ -147,19 +137,17 @@ export default function Demo() {
     };
   }, []);
 
-  // Progress tracker
+  // Progress tracker: update based on actual scene completion
+  // Each scene completion advances progress proportionally
   useEffect(() => {
     if (isStarted && !isFinished) {
-      progressIntervalRef.current = setInterval(() => {
-        const elapsed = Date.now() - totalStartTimeRef.current;
-        const pct = Math.min(100, (elapsed / totalDurationMs) * 100);
-        setTotalProgress(pct);
-      }, 200);
+      // Progress = completed scenes / total scenes (as percentage)
+      // Current scene contributes partial progress via sceneProgress
+      const basePct = (currentSceneIndex / totalScenes) * 100;
+      const scenePct = (1 / totalScenes) * sceneProgress;
+      setTotalProgress(Math.min(99, basePct + scenePct));
     }
-    return () => {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    };
-  }, [isStarted, isFinished, totalDurationMs]);
+  }, [isStarted, isFinished, currentSceneIndex, sceneProgress, totalScenes]);
 
   // Play a single audio URL and return a promise that resolves when it ends
   const playAudio = useCallback(
@@ -555,9 +543,11 @@ export default function Demo() {
     for (let i = 0; i < sceneRunners.length; i++) {
       if (token !== playbackTokenRef.current) return;
       setCurrentSceneIndex(i);
+      setSceneProgress(0);
       sceneStartTimeRef.current = Date.now();
       await sceneRunners[i](token);
       if (token !== playbackTokenRef.current) return;
+      setSceneProgress(100); // Mark scene as complete for progress bar
     }
 
     setIsFinished(true);
