@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🛡️ The War Room
 
@@ -229,4 +229,3 @@ Distributed under the Apache License 2.0. See [`LICENSE`](LICENSE) for more info
 [![Live Demo](https://img.shields.io/badge/Try_It_Now-thewarroom.manus.space-FF4C4C?style=for-the-badge)](https://thewarroom.manus.space)
 
 </div>
-]]>
