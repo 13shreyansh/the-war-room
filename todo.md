@@ -136,3 +136,9 @@
 - [x] Write comprehensive README.md (logo, badges, architecture, screenshots, tech stack)
 - [x] Add Apache 2.0 LICENSE file
 - [x] Push to GitHub
+
+## README Screenshots Fix
+- [x] Take fresh screenshots of homepage, results, demo pages
+- [x] Upload screenshots to CDN (3/3 success)
+- [x] Update README with working CDN image URLs
+- [x] Push to GitHub and verify images render
