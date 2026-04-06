@@ -124,3 +124,9 @@
 - [x] Fix demo progress bar: sync to actual scene completion, not fixed 2-min estimate
 - [x] Fix debate auto-scroll: removed scrollIntoView, users can scroll manually
 - [x] Add GitHub repo link with GitHub icon to homepage nav (https://github.com/13shreyansh/the-war-room)
+
+## SEO Fixes (Homepage)
+- [x] Add meta keywords tag (10 keywords)
+- [x] Add H2 heading to homepage ("How It Works")
+- [x] Fix page title (41 characters: "The War Room \u2014 AI Strategy Stress Testing")
+- [x] Add meta description (159 characters)

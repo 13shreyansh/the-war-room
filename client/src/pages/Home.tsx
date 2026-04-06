@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
 import { Shield, Zap, Target, ArrowRight, Play, Github } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
+
+  useEffect(() => {
+    document.title = "The War Room \u2014 AI Strategy Stress Testing";
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white relative overflow-hidden">
@@ -101,7 +106,10 @@ export default function Home() {
         </div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24">
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight font-['Inter'] mt-24 mb-8">
+          How It Works
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
             icon={<Target className="w-6 h-6 text-[#FF4C4C]" />}
             title="Research-Backed Personas"
