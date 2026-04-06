@@ -21,7 +21,7 @@ Upload your consulting deliverable. AI-generated stakeholder personas — armed 
 
 <div align="center">
 
-![The War Room — Results Page](https://d2xsxph8kpxj0f.cloudfront.net/310519663394062026/DP3EtwNNqFZjAnMmMTxdD8/results_f1ccb02f.png)
+![The War Room — Results Page](docs/screenshots/results.png)
 
 *AI personas debate your strategy in a live boardroom simulation with synthesized voices.*
 
@@ -185,13 +185,13 @@ the-war-room/
 <div align="center">
 
 ### Homepage
-![Homepage](https://d2xsxph8kpxj0f.cloudfront.net/310519663394062026/DP3EtwNNqFZjAnMmMTxdD8/homepage_439ce3cd.png)
+![Homepage](docs/screenshots/homepage.png)
 
 ### War Room Results
-![Results](https://d2xsxph8kpxj0f.cloudfront.net/310519663394062026/DP3EtwNNqFZjAnMmMTxdD8/results_f1ccb02f.png)
+![Results](docs/screenshots/results.png)
 
 ### Cinematic Demo
-![Demo](https://d2xsxph8kpxj0f.cloudfront.net/310519663394062026/DP3EtwNNqFZjAnMmMTxdD8/demo_02c92315.png)
+![Demo](docs/screenshots/demo.png)
 
 </div>
 
