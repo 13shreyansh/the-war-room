@@ -130,3 +130,9 @@
 - [x] Add H2 heading to homepage ("How It Works")
 - [x] Fix page title (41 characters: "The War Room \u2014 AI Strategy Stress Testing")
 - [x] Add meta description (159 characters)
+
+## GitHub Repo Polish
+- [x] Research world-class README best practices
+- [x] Write comprehensive README.md (logo, badges, architecture, screenshots, tech stack)
+- [x] Add Apache 2.0 LICENSE file
+- [x] Push to GitHub
